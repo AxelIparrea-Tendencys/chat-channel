@@ -103,16 +103,20 @@ function addTurn(text, kind) {
   return el;
 }
 
-const HELP = `Comandos:
-  /ls [ruta]        lista un directorio permitido
-  /cat <ruta>       muestra un archivo
-  /git <repo>       git status de un repo
-  /health           estado del backend
-  /help             esto
+const HELP = `Escribe en lenguaje normal. El asistente decide qué hacer:
 
-Cualquier otro texto va al motor que elijas abajo.
-"Local" usa el modelo de tu compu y no cuesta nada.
-"Claude Code" usa tu sesión, y tiene Slack, Gmail y Drive conectados.`;
+  "qué hay en mis descargas"       lista la carpeta
+  "cuál es el último archivo de X" busca y ordena por fecha
+  "muéstrame el archivo Y"         lo lee
+  "cómo va el repo Z"              git status
+  "recuerda que mi repo es X"      lo guarda para siempre
+  "qué sabes de mi repo"           consulta lo que guardó
+
+Lo que necesita código, Slack o correo lo escala solo a Claude Code.
+
+Comandos directos, si prefieres saltarte al asistente:
+  /health   estado del backend
+  /help     esto`;
 
 async function handleCommand(raw) {
   const [cmd, ...rest] = raw.slice(1).split(/\s+/);
@@ -133,24 +137,7 @@ async function handleCommand(raw) {
     ].join("\n");
   }
 
-  if (cmd === "ls") {
-    const data = await call("/api/list", arg ? { path: arg } : {});
-    return `${data.path}\n\n${data.entries.join("\n") || "(vacío)"}`;
-  }
-
-  if (cmd === "cat") {
-    if (!arg) throw new Error("Uso: /cat <ruta>");
-    const data = await call("/api/read", { path: arg });
-    return data.content + (data.truncated ? "\n\n[...truncado]" : "");
-  }
-
-  if (cmd === "git") {
-    if (!arg) throw new Error("Uso: /git <ruta del repo>");
-    const data = await call("/api/git", { repo: arg, command: "status" });
-    return data.output;
-  }
-
-  throw new Error(`Comando desconocido: /${cmd}. Usa /help.`);
+  throw new Error(`Comando desconocido: /${cmd}. Usa /help, o pídelo en lenguaje normal.`);
 }
 
 async function send() {
@@ -168,9 +155,14 @@ async function send() {
     if (text.startsWith("/")) {
       pending.lastChild.textContent = await handleCommand(text);
     } else {
-      const data = await call($("engine").value, { message: text });
+      // Un solo endpoint: el backend decide si responde local, usa una
+      // herramienta o escala. La persona no elige motor.
+      const data = await call("/api/agent", { message: text });
       pending.lastChild.textContent = data.reply || "(sin respuesta)";
-      pending.querySelector(".who").textContent = data.engine || "asistente";
+      const etiqueta = data.tool
+        ? `${data.engine} · ${data.tool}`
+        : data.engine || "asistente";
+      pending.querySelector(".who").textContent = etiqueta;
     }
   } catch (error) {
     pending.className = "turn err";

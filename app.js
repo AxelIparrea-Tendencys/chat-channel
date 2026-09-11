@@ -175,7 +175,16 @@ async function send() {
         ? `${data.engine} · ${data.tool}`
         : data.engine || "asistente";
       pending.querySelector(".who").textContent = etiqueta;
-      if (data.reply) history.push({ role: "assistant", content: data.reply });
+      if (data.reply) {
+        // `escalated` viaja en el historial para que el backend sepa que hay
+        // una tarea en curso: sin eso, contestar "a Pedro" tras "¿a quién?"
+        // se trata como un mensaje nuevo y el hilo se pierde.
+        history.push({
+          role: "assistant",
+          content: data.reply,
+          escalated: Boolean(data.escalated),
+        });
+      }
     }
   } catch (error) {
     pending.className = "turn err";

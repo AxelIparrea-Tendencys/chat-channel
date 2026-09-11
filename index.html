@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>AI Assistant</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="setup" class="panel">
+  <h1>AI Assistant</h1>
+  <p class="lead">Conecta con el backend que corre en tu laptop.</p>
+
+  <label for="endpoint">Endpoint del backend</label>
+  <input id="endpoint" type="url" placeholder="https://TU-SUBDOMINIO.ngrok-free.app" autocomplete="off" spellcheck="false">
+  <p class="hint">La URL que te da <code>ngrok http 8787</code>. Cambia cada vez que reinicias ngrok.</p>
+
+  <label for="token">Token</label>
+  <input id="token" type="password" placeholder="pega aquí tu AI_ASSISTANT_API_TOKEN" autocomplete="off" spellcheck="false">
+  <p class="hint">Se guarda solo en esta pestaña y se borra al cerrarla. No se commitea ni viaja a GitHub.</p>
+
+  <button id="connect">Conectar</button>
+  <p id="setup-error" class="error" hidden></p>
+</div>
+
+<div id="app" class="panel" hidden>
+  <header>
+    <div>
+      <strong>AI Assistant</strong>
+      <span id="status" class="status">—</span>
+    </div>
+    <button id="logout" class="ghost">Salir</button>
+  </header>
+
+  <div id="log" class="log"></div>
+
+  <div class="composer">
+    <select id="engine" title="Quién responde">
+      <option value="/api/chat">Local (gratis)</option>
+      <option value="/api/ask">Claude Code</option>
+    </select>
+    <input id="msg" type="text" placeholder="Escribe algo, o /help" autocomplete="off">
+    <button id="send">Enviar</button>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

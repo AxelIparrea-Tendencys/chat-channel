@@ -148,6 +148,21 @@ async function handleCommand(raw) {
   throw new Error(`Comando desconocido: /${cmd}. Usa /help, o pídelo en lenguaje normal.`);
 }
 
+// Lo que entró a la decisión: sin esto no hay forma de saber, mirando el
+// chat, si una skill se usó o si el modelo local tardó 200ms o 8s.
+function formatTrace(data) {
+  if (data.elapsed_ms === undefined) return null;
+  const partes = [];
+  if (data.skills_used && data.skills_used.length) {
+    partes.push(`skill: ${data.skills_used.join(", ")}`);
+  }
+  if (data.facts_count) {
+    partes.push(`${data.facts_count} hecho${data.facts_count === 1 ? "" : "s"} de memoria`);
+  }
+  partes.push(`${(data.elapsed_ms / 1000).toFixed(1)}s`);
+  return partes.join(" · ");
+}
+
 async function send() {
   const input = $("msg");
   const text = input.value.trim();
@@ -175,6 +190,22 @@ async function send() {
         ? `${data.engine} · ${data.tool}`
         : data.engine || "asistente";
       pending.querySelector(".who").textContent = etiqueta;
+      if (data.tool_ok === false) {
+        pending.classList.add("tool-failed");
+      }
+      if (data.escalated && data.reason) {
+        const meta = document.createElement("div");
+        meta.className = "meta";
+        meta.textContent = `escaló porque: ${data.reason}`;
+        pending.append(meta);
+      }
+      const traza = formatTrace(data);
+      if (traza) {
+        const meta = document.createElement("div");
+        meta.className = "meta";
+        meta.textContent = traza;
+        pending.append(meta);
+      }
       if (data.reply) {
         // `escalated` viaja en el historial para que el backend sepa que hay
         // una tarea en curso: sin eso, contestar "a Pedro" tras "¿a quién?"

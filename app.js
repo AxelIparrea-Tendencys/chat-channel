@@ -68,6 +68,10 @@ async function call(path, payload) {
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
+      // ngrok en plan gratuito intercepta las peticiones de navegador con una
+      // página de advertencia. Sin este header, fetch recibe ese HTML en vez
+      // del JSON del backend y todo falla con un error de parseo confuso.
+      "ngrok-skip-browser-warning": "true",
     },
     body: JSON.stringify(payload || {}),
   });
@@ -76,7 +80,12 @@ async function call(path, payload) {
   try {
     data = await response.json();
   } catch {
-    throw new Error(`El backend respondió ${response.status} sin JSON.`);
+    // Respuesta no-JSON: casi siempre es un intermediario (la advertencia de
+    // ngrok, un portal de wifi) respondiendo en lugar del backend.
+    throw new Error(
+      `El backend respondió ${response.status} sin JSON. ` +
+        "Revisa que la URL apunte a tu backend y no a otra cosa."
+    );
   }
   if (!response.ok) throw new Error(data.error || `Error ${response.status}`);
   return data;

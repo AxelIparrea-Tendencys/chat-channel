@@ -11,7 +11,7 @@ window.AI_ASSISTANT_CONFIG = {
   // Es la que imprime `ngrok http 8787` y cambia en cada reinicio de ngrok.
   // Déjala vacía para escribirla a mano en el formulario.
   //
-  //   endpoint: "https://abc123.ngrok-free.app",
+  //   endpoint: "https://abc123.ngrok-free.dev",
   endpoint: "",
 
   // Título que se muestra en la cabecera.

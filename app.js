@@ -8,6 +8,14 @@
 const KEY_ENDPOINT = "ai-assistant.endpoint";
 const KEY_TOKEN = "ai-assistant.token";
 
+// Turnos que se mandan al backend para que no pierda el hilo de una tarea.
+// Se recortan aquí porque el modelo que los lee es chico.
+const MAX_HISTORY = 8;
+
+// Historial de la conversación en memoria. No se persiste: al recargar se
+// empieza limpio, y así no queda nada sensible guardado en el navegador.
+const history = [];
+
 const $ = (id) => document.getElementById(id);
 
 const setup = $("setup");
@@ -148,6 +156,7 @@ async function send() {
   input.value = "";
   addTurn(text, "mine");
   $("send").disabled = true;
+  history.push({ role: "user", content: text });
 
   const pending = addTurn("…", "");
 
@@ -157,12 +166,16 @@ async function send() {
     } else {
       // Un solo endpoint: el backend decide si responde local, usa una
       // herramienta o escala. La persona no elige motor.
-      const data = await call("/api/agent", { message: text });
+      const data = await call("/api/agent", {
+        message: text,
+        history: history.slice(-MAX_HISTORY),
+      });
       pending.lastChild.textContent = data.reply || "(sin respuesta)";
       const etiqueta = data.tool
         ? `${data.engine} · ${data.tool}`
         : data.engine || "asistente";
       pending.querySelector(".who").textContent = etiqueta;
+      if (data.reply) history.push({ role: "assistant", content: data.reply });
     }
   } catch (error) {
     pending.className = "turn err";
@@ -213,6 +226,7 @@ function logout() {
   }
   $("token").value = "";
   log.replaceChildren();
+  history.length = 0;
   app.hidden = true;
   setup.hidden = false;
 }
